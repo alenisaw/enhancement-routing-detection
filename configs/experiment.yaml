@@ -1,0 +1,88 @@
+project:
+  name: enhancement-routing-detection
+  seed: 42
+
+paths:
+  coco_images_dir: data/raw/coco/val2017
+  coco_annotations: data/raw/coco/annotations/instances_val2017.json
+  work_dir: data/processed/coco_enhancement_routing
+  subset_annotations: data/processed/coco_enhancement_routing/annotations/instances_subset.json
+  manifest_csv: data/processed/coco_enhancement_routing/manifest.csv
+  tables_dir: results/tables
+  figures_dir: results/figures
+  models_dir: results/models
+
+dataset:
+  subset_size: 5000
+  require_annotations: true
+  copy_clean_images: true
+  image_extensions: [".jpg", ".jpeg", ".png"]
+
+conditions:
+  - name: clean
+    type: clean
+  - name: low_light
+    type: low_light
+    factor: 0.38
+    gamma: 1.65
+  - name: low_light_noise
+    type: low_light_noise
+    factor: 0.38
+    gamma: 1.65
+    noise_sigma: 13.0
+  - name: low_light_jpeg
+    type: low_light_jpeg
+    factor: 0.38
+    gamma: 1.65
+    jpeg_quality: 24
+  - name: blur
+    type: gaussian_blur
+    kernel_size: 7
+    sigma: 1.8
+  - name: contrast_reduction
+    type: contrast_reduction
+    alpha: 0.55
+    beta: 22
+
+preprocessing:
+  actions:
+    - none
+    - gamma
+    - clahe
+    - retinex
+  gamma:
+    gamma: 0.62
+  clahe:
+    clip_limit: 2.0
+    tile_grid_size: [8, 8]
+  retinex:
+    sigma_list: [15, 80, 250]
+    gain: 1.0
+    offset: 0.0
+  zero_dce:
+    enabled: false
+    command_template: ""
+
+detector:
+  name: yolov8n
+  weights: yolov8n.pt
+  image_size: 640
+  confidence: 0.001
+  iou: 0.7
+  device: "auto"
+  batch_size: 8
+  max_det: 300
+
+evaluation:
+  iou_threshold: 0.50
+  primary_score: per_image_recall50
+  reject_score: 0.15
+  router:
+    use_random_forest: true
+    train_fraction: 0.75
+    n_estimators: 200
+    random_state: 42
+
+runtime:
+  save_preprocessed_cache: false
+  overwrite: false

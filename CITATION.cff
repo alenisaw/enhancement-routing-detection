@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it as below."
+title: "Degradation-Aware Enhancement Routing for Object Detection"
+type: software
+authors:
+  - family-names: Issayev
+    given-names: Alen
+year: 2026
+repository-code: "https://github.com/alenisaw/enhancement-routing-detection"
+license: MIT
+keywords:
+  - object detection
+  - image enhancement
+  - image degradation
+  - low-light enhancement
+  - computational imaging
+  - routing policy
+abstract: "Experimental repository for degradation-aware preprocessing routing for object detection under synthetic low-light, blur, compression and contrast degradations."
