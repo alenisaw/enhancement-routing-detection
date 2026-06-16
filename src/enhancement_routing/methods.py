@@ -12,6 +12,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GroupShuffleSplit
+from tqdm import tqdm
 
 from .utils import ensure_dir
 
@@ -241,21 +242,53 @@ def rule_based_router(features: dict[str, float], reject_score: float = 0.15) ->
     return "none"
 
 
-def build_feature_table(manifest: pd.DataFrame) -> pd.DataFrame:
-    rows: list[dict[str, float | int | str]] = []
-    for row in manifest.itertuples(index=False):
-        image = read_rgb(row.image_path)
-        features = extract_no_reference_features(image)
-        rows.append(
-            {
-                "image_id": int(row.image_id),
-                "file_name": row.file_name,
-                "condition": row.condition,
-                "image_path": row.image_path,
-                **features,
-            }
-        )
-    return pd.DataFrame(rows)
+def _extract_row(row_data: tuple) -> dict[str, float | int | str]:
+    image_id, file_name, condition, image_path = row_data
+    image = read_rgb(image_path)
+    features = extract_no_reference_features(image)
+    return {
+        "image_id": int(image_id),
+        "file_name": file_name,
+        "condition": condition,
+        "image_path": image_path,
+        **features,
+    }
+
+
+def build_feature_table(
+    manifest: pd.DataFrame,
+    n_jobs: int = -1,
+    checkpoint_path: Path | None = None,
+    checkpoint_interval: int = 500,
+) -> pd.DataFrame:
+    saved_rows: list[dict] = []
+    done_ids: set[int] = set()
+
+    if checkpoint_path is not None and Path(checkpoint_path).exists():
+        saved_df = pd.read_csv(checkpoint_path)
+        done_ids = set(saved_df["image_id"].tolist())
+        saved_rows = saved_df.to_dict("records")
+        print(f"Resuming: {len(done_ids)} images already done, {len(manifest) - len(done_ids)} remaining.")
+
+    pending = [
+        (int(row.image_id), row.file_name, row.condition, row.image_path)
+        for row in manifest.itertuples(index=False)
+        if int(row.image_id) not in done_ids
+    ]
+
+    if not pending:
+        return pd.DataFrame(saved_rows)
+
+    new_rows: list[dict] = []
+    results = joblib.Parallel(n_jobs=n_jobs, return_as="generator")(
+        joblib.delayed(_extract_row)(t) for t in pending
+    )
+    for i, row in enumerate(tqdm(results, total=len(pending), desc="Extracting features"), 1):
+        new_rows.append(row)
+        if checkpoint_path is not None and i % checkpoint_interval == 0:
+            pd.DataFrame(saved_rows + new_rows).to_csv(checkpoint_path, index=False)
+
+    return pd.DataFrame(saved_rows + new_rows)
 
 
 def run_yolo_inference(
@@ -283,8 +316,6 @@ def run_yolo_inference(
     iou = float(detector_cfg.get("iou", 0.7))
     imgsz = int(detector_cfg.get("image_size", 640))
     max_det = int(detector_cfg.get("max_det", 300))
-
-    from tqdm import tqdm
 
     for item in tqdm(manifest.itertuples(index=False), total=len(manifest), desc="Detector inference"):
         base_image = read_rgb(item.image_path)

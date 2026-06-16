@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import io
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -52,12 +54,14 @@ def evaluate_coco_group(
         raise ImportError("Install pycocotools to compute COCO metrics.") from exc
 
     coco_gt = COCO(str(annotations_path))
-    coco_dt = coco_gt.loadRes(str(output_json))
+    with contextlib.redirect_stdout(io.StringIO()):
+        coco_dt = coco_gt.loadRes(str(output_json))
     coco_eval = COCOeval(coco_gt, coco_dt, "bbox")
     coco_eval.params.imgIds = sorted(detections["image_id"].dropna().astype(int).unique().tolist())
     coco_eval.evaluate()
     coco_eval.accumulate()
-    coco_eval.summarize()
+    with contextlib.redirect_stdout(io.StringIO()):
+        coco_eval.summarize()
     stats = coco_eval.stats
     valid = detections[(detections["category_id"] >= 0) & (~detections["is_reject_action"].astype(bool))]
     return {
@@ -160,6 +164,8 @@ def compute_per_image_scores(
 
 
 def compute_oracle_actions(per_image_scores: pd.DataFrame, primary_score: str = "per_image_recall50") -> pd.DataFrame:
+    # Oracle uses ground-truth-optimal actions selected in hindsight.
+    # It is a non-deployable upper bound, not a routing policy.
     candidates = per_image_scores[per_image_scores["action"] != "reject"].copy()
     candidates = candidates.sort_values(
         ["image_id", "condition", primary_score, "mean_confidence", "runtime_ms"],

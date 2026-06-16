@@ -30,8 +30,9 @@ def main() -> None:
     if args.limit is not None:
         manifest = manifest.head(args.limit)
 
-    feature_table = build_feature_table(manifest)
-    write_csv(tables_dir / "quality_features.csv", feature_table)
+    feature_csv = tables_dir / "quality_features.csv"
+    feature_table = build_feature_table(manifest, checkpoint_path=feature_csv)
+    write_csv(feature_csv, feature_table)
     print(f"Saved no-reference features: {tables_dir / 'quality_features.csv'}")
 
     if args.skip_detector:

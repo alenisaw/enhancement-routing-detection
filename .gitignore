@@ -11,11 +11,12 @@ venv/
 # Data and generated artifacts
 data/raw/
 data/processed/
-results/tables/*.csv
-results/tables/*.json
-results/figures/*.png
-results/figures/*.pdf
-results/models/*.joblib
+data/**/.cache/
+results/tables/**/*.csv
+results/tables/**/*.json
+results/figures/**/*.png
+results/figures/**/*.pdf
+results/models/**/*.joblib
 runs/
 weights/
 *.pt
@@ -27,3 +28,4 @@ Thumbs.db
 .idea/
 
 .agent
+.ai-activity

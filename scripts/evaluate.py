@@ -66,7 +66,8 @@ def main() -> None:
 
     router_training = features.merge(oracle_actions[["image_id", "condition", "oracle_action"]], on=["image_id", "condition"], how="inner")
     rf_enabled = bool(config["evaluation"].get("router", {}).get("use_random_forest", True))
-    if rf_enabled and not router_training.empty:
+    min_rf_samples = 4
+    if rf_enabled and len(router_training) >= min_rf_samples:
         rf_pred, test_acc = train_random_forest_router(
             router_training,
             feature_columns=feature_cols,
@@ -75,6 +76,8 @@ def main() -> None:
         )
         router = router.merge(rf_pred, on=["image_id", "condition"], how="left")
         print(f"Random Forest router test accuracy: {test_acc:.3f}")
+    elif rf_enabled:
+        print(f"Skipping Random Forest router: only {len(router_training)} training samples (need >= {min_rf_samples}).")
 
     write_csv(tables_dir / "router_predictions.csv", router)
 

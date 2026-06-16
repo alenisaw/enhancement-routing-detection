@@ -17,6 +17,20 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
+
+    images_dir = Path(config["paths"]["coco_images_dir"])
+    annotations_path = Path(config["paths"]["coco_annotations"])
+    if not images_dir.exists():
+        raise FileNotFoundError(
+            f"COCO images directory not found: {images_dir}\n"
+            "Download COCO val2017 images and place them at the path above."
+        )
+    if not annotations_path.exists():
+        raise FileNotFoundError(
+            f"COCO annotations file not found: {annotations_path}\n"
+            "Download instances_val2017.json and place it at the path above."
+        )
+
     manifest = prepare_dataset(config, limit=args.limit)
     print(f"Prepared {manifest['image_id'].nunique()} original images and {len(manifest)} image variants.")
     print(f"Manifest: {Path(config['paths']['manifest_csv']).resolve()}")
