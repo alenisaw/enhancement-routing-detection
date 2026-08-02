@@ -27,10 +27,7 @@ enhancement-routing-detection/
 │   └── experiment.yaml                  ← Single source of truth for all pipeline parameters
 │
 ├── docs/
-│   ├── REPRODUCTION.md                  ← This file
-│   └── assets/
-│       ├── condition_action_delta.png   ← Fig. 1: condition-action mAP50-95 change matrix
-│       └── oracle_rf_distributions.png  ← Fig. 2: Oracle vs. RF routing distributions
+│   └── REPRODUCTION.md                  ← This file
 │
 ├── src/
 │   └── enhancement_routing/
@@ -331,23 +328,6 @@ python scripts/make_figures.py --config configs/experiment.yaml
 | `results/figures/harmful_enhancement_cases.png` | Horizontal bar chart — harmful preprocessing rate per policy |
 | `results/figures/routing_pipeline.png` | Text-box flow diagram — routing pipeline: input → features → policy → action → detector → metrics |
 
-> **Note on paper figures.** The two figures embedded in `README.md` (the condition-action mAP50–95 change heatmap and the Oracle vs. RF stacked bar distributions by condition) are **not** outputs of `make_figures.py`. They are placed manually into `docs/assets/` — see the section below.
-
----
-
-### Placing Paper Figures into `docs/assets/`
-
-The two figures displayed in `README.md` — the condition-action mAP50–95 change heatmap (Fig. 1) and the Oracle vs. RF routing distributions (Fig. 2) — must be placed into `docs/assets/` manually. They are not produced by `make_figures.py`.
-
-**Expected filenames** (must match the paths referenced in `README.md`):
-
-```
-docs/assets/Condition-action delta vs. no preprocessing.png   ← Fig. 1 heatmap
-docs/assets/Oracle and RF action distributions.png            ← Fig. 2 stacked bars
-```
-
-Copy these from your saved figure screenshots or re-export them from the source that produced them.
-
 ---
 
 ### Full Reproduction — All Five Stages
@@ -368,8 +348,6 @@ python scripts/evaluate.py --config configs/experiment.yaml
 
 # Stage 5 — Render diagnostic figures
 python scripts/make_figures.py --config configs/experiment.yaml
-
-# Place paper figures manually into docs/assets/ (see §5 for required filenames)
 ```
 
 ---
